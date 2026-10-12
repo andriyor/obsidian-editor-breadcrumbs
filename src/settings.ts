@@ -7,6 +7,8 @@ export interface EBSettings {
   maxSegmentLength: number;
   /** Hide the bar entirely when the note has no headings. */
   hideWhenNoHeadings: boolean;
+  /** In edit mode, follow the scroll position (center line) instead of the cursor. */
+  editFollowScroll: boolean;
   /** Show the bar in reading (preview) mode too. */
   showInReadingMode: boolean;
   /** Render the heading trail inside the native tab header (after the file
@@ -19,6 +21,7 @@ export const defaultSettings: EBSettings = {
   showFileName: true,
   maxSegmentLength: 20,
   hideWhenNoHeadings: false,
+  editFollowScroll: false,
   showInReadingMode: true,
   showInTabHeader: false,
 };

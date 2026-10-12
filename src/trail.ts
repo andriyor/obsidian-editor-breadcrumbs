@@ -186,6 +186,19 @@ export function computeEditHeadingTrail(app: { metadataCache: { getFileCache(f: 
   }));
 }
 
+/** 0-based document line at the vertical middle of the edit view, or null
+ *  when the CodeMirror view is unavailable. */
+export function getEditScrollLine(view: MarkdownView): number | null {
+  // `editor.cm` is the CodeMirror EditorView, absent from the public typings.
+  const cm = (view.editor as unknown as { cm?: { scrollDOM: HTMLElement; documentTop: number; lineBlockAtHeight(h: number): { from: number }; state: { doc: { lineAt(pos: number): { number: number } } } } }).cm;
+  if (!cm) return null;
+  // lineBlockAtHeight measures from the document top, which sits below the
+  // scroller top (inline title, properties), so go through screen coordinates
+  const rect = cm.scrollDOM.getBoundingClientRect();
+  const block = cm.lineBlockAtHeight(rect.top + rect.height / 2 - cm.documentTop);
+  return cm.state.doc.lineAt(block.from).number - 1;
+}
+
 /** The scrolling element of a reading view (typing-safe across app versions). */
 export function getPreviewEl(view: MarkdownView): HTMLElement | null {
   // Internal renderer field, absent from the public typings.

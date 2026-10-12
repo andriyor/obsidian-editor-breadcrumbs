@@ -35,6 +35,11 @@ export class EBSettingTab extends PluginSettingTab {
         },
       },
       {
+        name: 'Follow scroll in edit mode',
+        desc: 'In edit mode, show the heading at the middle of the view (like reading mode) instead of the heading at the cursor.',
+        control: { type: 'toggle', key: 'editFollowScroll' },
+      },
+      {
         name: 'Show in reading mode',
         desc: 'Also show the breadcrumb bar in reading (preview) mode, following the scroll position.',
         control: { type: 'toggle', key: 'showInReadingMode' },
