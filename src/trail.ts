@@ -186,6 +186,19 @@ export function computeEditHeadingTrail(app: { metadataCache: { getFileCache(f: 
   }));
 }
 
+/** 0-based document line at the top edge of the edit view, or null when the
+ *  CodeMirror view is unavailable. */
+export function getEditTopLine(view: MarkdownView): number | null {
+  // `editor.cm` is the CodeMirror EditorView, absent from the public typings.
+  const cm = (view.editor as unknown as { cm?: { scrollDOM: HTMLElement; documentTop: number; lineBlockAtHeight(h: number): { from: number }; state: { doc: { lineAt(pos: number): { number: number } } } } }).cm;
+  if (!cm) return null;
+  // lineBlockAtHeight measures from the document top, which sits below the
+  // scroller top (inline title, properties), so go through screen coordinates
+  const rect = cm.scrollDOM.getBoundingClientRect();
+  const block = cm.lineBlockAtHeight(Math.max(0, rect.top - cm.documentTop));
+  return cm.state.doc.lineAt(block.from).number - 1;
+}
+
 /** The scrolling element of a reading view (typing-safe across app versions). */
 export function getPreviewEl(view: MarkdownView): HTMLElement | null {
   // Internal renderer field, absent from the public typings.
@@ -282,14 +295,14 @@ function previewLineAtOffset(renderer: PreviewRendererInternals, y: number): num
  * is what the bar follows: a heading becomes current once it crosses the middle
  * of the visible reading area.
  */
-function getPreviewCenterLine(view: MarkdownView): number | null {
+function getPreviewCenterLine(view: MarkdownView, atTop = false): number | null {
   try {
     // Internal renderer field, absent from the public typings.
     const previewMode = view.previewMode as unknown as PreviewModeInternals | undefined;
     const renderer = previewMode?.renderer;
     const previewEl = renderer?.previewEl ?? getPreviewEl(view);
     if (!renderer || !previewEl) return null;
-    return previewLineAtOffset(renderer, previewEl.scrollTop + previewEl.clientHeight / 2);
+    return previewLineAtOffset(renderer, previewEl.scrollTop + (atTop ? 1 : previewEl.clientHeight / 2));
   } catch {
     return null;
   }
@@ -316,11 +329,11 @@ const JUMP_CORRECT_MS = 250;
  * instead of the viewport top). Falls back to the viewport-top line while
  * sections are still being measured, then to the rendered DOM heading window.
  */
-export function computePreviewHeadingTrail(app: { metadataCache: { getFileCache(f: TFile): { headings?: HeadingCache[] } | null } }, view: MarkdownView): Crumb[] {
+export function computePreviewHeadingTrail(app: { metadataCache: { getFileCache(f: TFile): { headings?: HeadingCache[] } | null } }, view: MarkdownView, atTop = false): Crumb[] {
   const file = view.file;
   if (!file) return [];
 
-  const centerLine = getPreviewCenterLine(view);
+  const centerLine = getPreviewCenterLine(view, atTop);
   if (centerLine != null) {
     const headings = getEffectiveHeadings(app, file, view.editor, centerLine);
     return headingChainFromCache(headings, centerLine).map(h => ({

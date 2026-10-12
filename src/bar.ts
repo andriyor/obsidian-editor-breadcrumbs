@@ -1,6 +1,6 @@
 import { MarkdownView, Menu, TFile, WorkspaceLeaf } from 'obsidian';
 import type { BreadcrumbsPlugin } from '../main';
-import { Crumb, computeEditHeadingTrail, computePreviewHeadingTrail, getEffectiveHeadings, getPreviewEl, scrollToPreviewHeading, stripMarkdown } from './trail';
+import { Crumb, computeEditHeadingTrail, computePreviewHeadingTrail, getEditTopLine, getEffectiveHeadings, getPreviewEl, scrollToPreviewHeading, stripMarkdown } from './trail';
 
 const SEPARATOR = '›';
 
@@ -105,6 +105,7 @@ export class BreadcrumbBar {
   private checkRefresh() {
     const previewEl = this.view.getMode() === 'preview' ? getPreviewEl(this.view) : null;
     const cursor = this.view.editor?.getCursor('from');
+    const editScroll = this.view.getMode() !== 'preview' && this.plugin.settings.followViewTop ? getEditTopLine(this.view) : null;
     const snapshot = [
       this.view.getMode(),
       this.view.file?.path ?? '',
@@ -112,11 +113,13 @@ export class BreadcrumbBar {
       // the center line, so a resize can change the chain without any scroll.
       previewEl ? `${Math.round(previewEl.scrollTop)}/${Math.round(previewEl.clientHeight)}/${previewEl.scrollHeight}` : '',
       cursor ? `${cursor.line}:${cursor.ch}` : '',
+      editScroll ?? '',
       this.plugin.settings.maxSegmentLength,
       this.plugin.settings.showFolderPath ? 1 : 0,
       this.plugin.settings.showFileName ? 1 : 0,
       this.plugin.settings.showInReadingMode ? 1 : 0,
       this.plugin.settings.hideWhenNoHeadings ? 1 : 0,
+      this.plugin.settings.followViewTop ? 1 : 0,
     ].join('|');
     if (snapshot === this.lastSnapshot) return;
     this.lastSnapshot = snapshot;
@@ -155,10 +158,11 @@ export class BreadcrumbBar {
     }
 
     if (this.view.getMode() === 'preview') {
-      crumbs.push(...computePreviewHeadingTrail(this.plugin.app, this.view));
+      crumbs.push(...computePreviewHeadingTrail(this.plugin.app, this.view, this.plugin.settings.followViewTop));
     } else {
       const cursor = this.view.editor?.getCursor('from');
-      const line = cursor ? cursor.line : 0;
+      const scrollLine = this.plugin.settings.followViewTop ? getEditTopLine(this.view) : null;
+      const line = scrollLine ?? (cursor ? cursor.line : 0);
       crumbs.push(...computeEditHeadingTrail(this.plugin.app, file, line, this.view.editor));
     }
 

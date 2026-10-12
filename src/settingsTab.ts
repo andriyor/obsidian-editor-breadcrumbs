@@ -35,6 +35,11 @@ export class EBSettingTab extends PluginSettingTab {
         },
       },
       {
+        name: 'Follow top of view (sticky header)',
+        desc: 'Show the heading of the section at the top edge of the view, like a sticky header, in both edit and reading mode. In edit mode this replaces following the cursor.',
+        control: { type: 'toggle', key: 'followViewTop' },
+      },
+      {
         name: 'Show in reading mode',
         desc: 'Also show the breadcrumb bar in reading (preview) mode, following the scroll position.',
         control: { type: 'toggle', key: 'showInReadingMode' },
