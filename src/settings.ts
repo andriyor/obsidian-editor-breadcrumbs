@@ -7,9 +7,14 @@ export interface EBSettings {
   maxSegmentLength: number;
   /** Hide the bar entirely when the note has no headings. */
   hideWhenNoHeadings: boolean;
-  /** Sticky-header behaviour: follow the top of the view in both modes, so the
-   *  trail shows the heading scrolled past (edit mode no longer tracks the cursor). */
-  followViewTop: boolean;
+  /** In edit mode, follow the view anchor line instead of the cursor. */
+  editFollowView: boolean;
+  /** Vertical anchor in the editor viewport, in percent: 0 = top edge,
+   *  50 = middle, 100 = bottom edge. Only used when `editFollowView` is on. */
+  editAnchorPercent: number;
+  /** Vertical anchor in the reading viewport, in percent: a heading becomes
+   *  current once it crosses this line (0 = top edge, 50 = middle, 100 = bottom). */
+  readingAnchorPercent: number;
   /** Show the bar in reading (preview) mode too. */
   showInReadingMode: boolean;
   /** Render the heading trail inside the native tab header (after the file
@@ -22,7 +27,15 @@ export const defaultSettings: EBSettings = {
   showFileName: true,
   maxSegmentLength: 20,
   hideWhenNoHeadings: false,
-  followViewTop: false,
+  editFollowView: false,
+  editAnchorPercent: 50,
+  readingAnchorPercent: 50,
   showInReadingMode: true,
   showInTabHeader: false,
 };
+
+/** Clamp a stored or typed anchor percentage to 0–100, with a safe fallback. */
+export function normalizePercent(value: unknown, fallback = 50): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return fallback;
+  return Math.min(100, Math.max(0, Math.round(value)));
+}

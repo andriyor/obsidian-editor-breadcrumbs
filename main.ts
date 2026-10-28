@@ -1,7 +1,7 @@
 import { MarkdownView, Plugin, TFile } from 'obsidian';
 import { ViewPlugin, type ViewUpdate } from '@codemirror/view';
 import { BreadcrumbBar } from './src/bar';
-import { defaultSettings, EBSettings } from './src/settings';
+import { defaultSettings, EBSettings, normalizePercent } from './src/settings';
 import { EBSettingTab } from './src/settingsTab';
 
 export class BreadcrumbsPlugin extends Plugin {
@@ -117,12 +117,24 @@ export class BreadcrumbsPlugin extends Plugin {
   }
 
   async loadSettings() {
-    const settings: EBSettings = { ...defaultSettings, ...((await this.loadData()) as Partial<EBSettings>) };
+    // The legacy pre-1.0.7 flag is destructured out so it never reaches the
+    // settings object, and the stored data matches the current schema on save.
+    const { followViewTop: legacyFollowViewTop, ...raw } = (await this.loadData()) as Partial<EBSettings> & { followViewTop?: unknown };
+    const settings: EBSettings = { ...defaultSettings, ...raw };
+    if (legacyFollowViewTop === true) {
+      settings.editFollowView = true;
+      settings.editAnchorPercent = 0;
+      settings.readingAnchorPercent = 0;
+    }
+    settings.editFollowView = settings.editFollowView === true;
     // Defensive: a hand-edited or legacy data.json must never produce a
-    // non-numeric maxSegmentLength (it would blank every crumb in the bar).
+    // non-numeric maxSegmentLength (it would blank every crumb in the bar) or
+    // an out-of-range anchor (it would read outside the viewport).
     if (!Number.isFinite(settings.maxSegmentLength) || settings.maxSegmentLength < 0) {
       settings.maxSegmentLength = defaultSettings.maxSegmentLength;
     }
+    settings.editAnchorPercent = normalizePercent(settings.editAnchorPercent, defaultSettings.editAnchorPercent);
+    settings.readingAnchorPercent = normalizePercent(settings.readingAnchorPercent, defaultSettings.readingAnchorPercent);
     this.settings = settings;
   }
 }

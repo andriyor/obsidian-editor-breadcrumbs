@@ -1,6 +1,6 @@
 import { MarkdownView, Menu, TFile, WorkspaceLeaf } from 'obsidian';
 import type { BreadcrumbsPlugin } from '../main';
-import { Crumb, computeEditHeadingTrail, computePreviewHeadingTrail, getEditTopLine, getEffectiveHeadings, getPreviewEl, scrollToPreviewHeading, stripMarkdown } from './trail';
+import { Crumb, computeEditHeadingTrail, computePreviewHeadingTrail, getEditLineAt, getEffectiveHeadings, getPreviewEl, scrollToEditHeading, scrollToPreviewHeading, stripMarkdown } from './trail';
 
 const SEPARATOR = '›';
 
@@ -103,23 +103,28 @@ export class BreadcrumbBar {
 
   /** Cheap state fingerprint; re-render only when something relevant moved. */
   private checkRefresh() {
+    const { settings } = this.plugin;
     const previewEl = this.view.getMode() === 'preview' ? getPreviewEl(this.view) : null;
     const cursor = this.view.editor?.getCursor('from');
-    const editScroll = this.view.getMode() !== 'preview' && this.plugin.settings.followViewTop ? getEditTopLine(this.view) : null;
+    const editAnchor = this.view.getMode() !== 'preview' && settings.editFollowView
+      ? getEditLineAt(this.view, settings.editAnchorPercent / 100)
+      : null;
     const snapshot = [
       this.view.getMode(),
       this.view.file?.path ?? '',
       // clientHeight is part of the fingerprint: the reading-mode chain reads
-      // the center line, so a resize can change the chain without any scroll.
+      // the anchor line, so a resize can change the chain without any scroll.
       previewEl ? `${Math.round(previewEl.scrollTop)}/${Math.round(previewEl.clientHeight)}/${previewEl.scrollHeight}` : '',
       cursor ? `${cursor.line}:${cursor.ch}` : '',
-      editScroll ?? '',
-      this.plugin.settings.maxSegmentLength,
-      this.plugin.settings.showFolderPath ? 1 : 0,
-      this.plugin.settings.showFileName ? 1 : 0,
-      this.plugin.settings.showInReadingMode ? 1 : 0,
-      this.plugin.settings.hideWhenNoHeadings ? 1 : 0,
-      this.plugin.settings.followViewTop ? 1 : 0,
+      editAnchor ?? '',
+      settings.maxSegmentLength,
+      settings.showFolderPath ? 1 : 0,
+      settings.showFileName ? 1 : 0,
+      settings.showInReadingMode ? 1 : 0,
+      settings.hideWhenNoHeadings ? 1 : 0,
+      settings.editFollowView ? 1 : 0,
+      settings.editAnchorPercent,
+      settings.readingAnchorPercent,
     ].join('|');
     if (snapshot === this.lastSnapshot) return;
     this.lastSnapshot = snapshot;
@@ -158,11 +163,11 @@ export class BreadcrumbBar {
     }
 
     if (this.view.getMode() === 'preview') {
-      crumbs.push(...computePreviewHeadingTrail(this.plugin.app, this.view, this.plugin.settings.followViewTop));
+      crumbs.push(...computePreviewHeadingTrail(this.plugin.app, this.view, settings.readingAnchorPercent / 100));
     } else {
       const cursor = this.view.editor?.getCursor('from');
-      const scrollLine = this.plugin.settings.followViewTop ? getEditTopLine(this.view) : null;
-      const line = scrollLine ?? (cursor ? cursor.line : 0);
+      const anchorLine = settings.editFollowView ? getEditLineAt(this.view, settings.editAnchorPercent / 100) : null;
+      const line = anchorLine ?? (cursor ? cursor.line : 0);
       crumbs.push(...computeEditHeadingTrail(this.plugin.app, file, line, this.view.editor));
     }
 
@@ -264,14 +269,21 @@ export class BreadcrumbBar {
   }
 
   private jumpToHeading(crumb: Crumb) {
+    const { settings } = this.plugin;
     if (this.view.getMode() === 'preview' && crumb.line != null) {
-      void scrollToPreviewHeading(this.plugin.app, this.view, crumb.line, crumb.text);
+      void scrollToPreviewHeading(this.plugin.app, this.view, crumb.line, crumb.text, settings.readingAnchorPercent / 100);
       return;
     }
     if (crumb.line != null && this.view.editor) {
       const editor = this.view.editor;
       editor.setCursor({ line: crumb.line, ch: 0 });
-      editor.scrollIntoView({ from: { line: crumb.line, ch: 0 }, to: { line: crumb.line, ch: 0 } }, true);
+      // When the trail follows the view anchor, land the heading on that same
+      // line: a centered scroll would leave the clicked crumb above the anchor
+      // and the bar would immediately show its parent instead.
+      const anchored = settings.editFollowView && scrollToEditHeading(this.view, crumb.line, settings.editAnchorPercent / 100);
+      if (!anchored) {
+        editor.scrollIntoView({ from: { line: crumb.line, ch: 0 }, to: { line: crumb.line, ch: 0 } }, true);
+      }
       editor.focus();
     }
   }

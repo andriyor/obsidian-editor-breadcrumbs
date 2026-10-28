@@ -35,9 +35,35 @@ export class EBSettingTab extends PluginSettingTab {
         },
       },
       {
-        name: 'Follow top of view (sticky header)',
-        desc: 'Show the heading of the section at the top edge of the view, like a sticky header, in both edit and reading mode. In edit mode this replaces following the cursor.',
-        control: { type: 'toggle', key: 'followViewTop' },
+        name: 'Follow view anchor in edit mode',
+        desc: 'Off: the trail follows the cursor, as before. On: it follows the line at the edit-mode anchor below, so scrolling without clicking also updates the trail.',
+        control: { type: 'toggle', key: 'editFollowView' },
+      },
+      {
+        name: 'Edit-mode anchor (%)',
+        desc: 'Where in the editor the trail switches headings: 0 = top edge, 50 = middle, 100 = bottom edge. Only used when "Follow view anchor in edit mode" is on.',
+        control: {
+          type: 'number',
+          key: 'editAnchorPercent',
+          min: 0,
+          max: 100,
+          step: 1,
+          defaultValue: defaultSettings.editAnchorPercent,
+          validate: value => (Number.isInteger(value) && value >= 0 && value <= 100 ? undefined : 'Enter a whole number from 0 to 100.'),
+        },
+      },
+      {
+        name: 'Reading-mode anchor (%)',
+        desc: 'Where in the reading view a heading becomes current: 0 = top edge, 50 = middle, 100 = bottom edge.',
+        control: {
+          type: 'number',
+          key: 'readingAnchorPercent',
+          min: 0,
+          max: 100,
+          step: 1,
+          defaultValue: defaultSettings.readingAnchorPercent,
+          validate: value => (Number.isInteger(value) && value >= 0 && value <= 100 ? undefined : 'Enter a whole number from 0 to 100.'),
+        },
       },
       {
         name: 'Show in reading mode',

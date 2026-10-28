@@ -24,11 +24,11 @@ A breadcrumb bar sits at the top of the editor pane, following the cursor (edit 
 
 ## Features
 
-- Real-time trail: follows the cursor in edit mode, follows scrolling in reading mode — in reading mode the current heading is the one at the middle of the view. Works on long, virtualized documents.
+- Real-time trail: follows the cursor in edit mode by default; an optional **view anchor** makes edit mode follow scrolling too. Reading mode follows the scroll position. The anchor line is configurable per mode (0–100%, default middle). Works on long, virtualized documents.
 - **Skipped heading levels stay visible** (issue #1): when the structure jumps, e.g. `H1` straight to `H4`, the bar shows extra separators (`H1 text ›› H4 text`), one per missing level.
 - Left-click a heading crumb → the **sibling heading menu** (headings of the same level under the same parent, current one checked). Arrow-key navigation is built in.
 - Right-click a heading crumb → jump to it immediately.
-- Jumps land precisely in both modes; reading-mode jumps center the target and use Obsidian's own internal heading-scroll path.
+- Jumps land precisely in both modes on the configured anchor line, using Obsidian's own internal heading-scroll path in reading mode.
 - Click a file/folder crumb → reveal the file in the file explorer.
 - Long names are truncated with an ellipsis in the bar; the sibling menu always shows full titles.
 
@@ -47,6 +47,9 @@ A breadcrumb bar sits at the top of the editor pane, following the cursor (edit 
 | Show folder path | on | Show the `Folder › Subfolder` chain before the file name |
 | Show file name | on | Show the file name crumb |
 | Max characters per crumb | 20 | Truncation length for the bar (menu entries are never truncated) |
+| Follow view anchor in edit mode | off | Off: the trail follows the cursor (original behaviour). On: it follows the line at the edit-mode anchor, so scrolling without clicking updates the trail |
+| Edit-mode anchor (%) | 50 | Where the trail switches headings in edit mode: 0 = top edge, 50 = middle, 100 = bottom edge |
+| Reading-mode anchor (%) | 50 | Where a heading becomes current in reading mode: 0 = top edge, 50 = middle, 100 = bottom edge |
 | Show in reading mode | on | Also show the bar in reading mode, following the scroll position |
 | Show heading trail in the tab header | off | Render the heading trail inside the native tab title bar, right after the `Folder › File` path (folder/file crumbs are omitted there — the native path already shows them) |
 | Hide when there are no headings | off | Hide the bar entirely for notes without headings |
@@ -101,11 +104,11 @@ VS Code 风格的 Obsidian 编辑器面包屑导航：
 
 ## 功能
 
-- 路径实时更新；阅读模式同样支持（以窗口正中为当前阅读位置，含超长虚拟化文档）。
+- 路径实时更新；编辑模式默认**跟随光标**，也可开启**视图锚点**改为跟随滚动；阅读模式**跟随滚动**。锚点位置按模式单独设置（0–100%，默认中间），含超长虚拟化文档。
 - **标题跳级可见**（issue #1）：层级跳跃时（如 `H1` 直接到 `H4`），面包屑会显示额外分隔符（`H1 文本 ›› H4 文本`），每缺一级多一个 `›`。
 - 左键标题段 → 弹出**同级标题菜单**（同一父标题下同层级的兄弟标题，当前项勾选），方向键导航原生支持。
 - 右键标题段 → 直接跳转到该标题。
-- 两种模式均精确落地；阅读模式把目标标题滚到窗口正中，走 Obsidian 官方内部跳转路径。
+- 两种模式均精确落地到设定的锚点行；阅读模式走 Obsidian 官方内部跳转路径。
 - 左键/右键文件、文件夹段 → 在文件列表中定位该文件。
 - 面包屑栏里长标题截断显示 `…`；同级菜单里始终显示完整标题。
 
@@ -124,6 +127,9 @@ VS Code 风格的 Obsidian 编辑器面包屑导航：
 | Show folder path | 开 | 是否显示 `文件夹 › 子文件夹` 段 |
 | Show file name | 开 | 是否显示文件名段 |
 | Max characters per crumb | 20 | 面包屑栏每段最大字符数（菜单内不截断） |
+| Follow view anchor in edit mode | 关 | 关闭时编辑模式跟随光标（原行为）；开启后改为跟随下方设定的编辑区锚点行，滚动即更新 |
+| Edit-mode anchor (%) | 50 | 编辑模式在视口何处切换标题：0 = 顶部，50 = 中间，100 = 底部 |
+| Reading-mode anchor (%) | 50 | 阅读模式标题在视口何处算作“当前”：0 = 顶部，50 = 中间，100 = 底部 |
 | Show in reading mode | 开 | 阅读模式是否也显示面包屑（跟随滚动） |
 | Show heading trail in the tab header | 关 | 把标题导航渲染进 Obsidian 原生标签页标题栏（`文件夹 › 文件名` 之后）；该模式下不再重复显示路径段，因为原生标题栏已包含 |
 | Hide when there are no headings | 关 | 无标题的笔记是否隐藏整条面包屑 |
