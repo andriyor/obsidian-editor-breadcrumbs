@@ -54,6 +54,12 @@ A breadcrumb bar sits at the top of the editor pane, following the cursor (edit 
 | Show heading trail in the tab header | off | Render the heading trail inside the native tab title bar, right after the `Folder › File` path (folder/file crumbs are omitted there — the native path already shows them) |
 | Hide when there are no headings | off | Hide the bar entirely for notes without headings |
 
+## Translations
+
+The settings tab is localized into 12 languages: 简体中文, 繁體中文, 日本語, 한국어, Українська, Русский, Français, Deutsch, Português, Português (Brasil), Español, العربية.
+
+These translations were produced with AI assistance and have **not** been reviewed by native speakers. Corrections are welcome via issues or pull requests.
+
 ## Installation
 
 **Editor Breadcrumbs is available in the official community plugin store**: open [the store page](https://community.obsidian.md/plugins/editor-breadcrumbs) or search "Editor Breadcrumbs" in **Settings → Community plugins → Browse**, then hit Install.
@@ -133,6 +139,12 @@ VS Code 风格的 Obsidian 编辑器面包屑导航：
 | Show in reading mode | 开 | 阅读模式是否也显示面包屑（跟随滚动） |
 | Show heading trail in the tab header | 关 | 把标题导航渲染进 Obsidian 原生标签页标题栏（`文件夹 › 文件名` 之后）；该模式下不再重复显示路径段，因为原生标题栏已包含 |
 | Hide when there are no headings | 关 | 无标题的笔记是否隐藏整条面包屑 |
+
+## 多语言
+
+设置页已支持 12 种语言：简体中文、繁體中文、日本語、한국어、Українська、Русский、Français、Deutsch、Português、Português (Brasil)、Español、العربية。
+
+语言文件由 AI 翻译生成，**尚未经过母语者审核**；如有偏差，欢迎通过 issue 或 PR 指正。
 
 ## 安装
 
