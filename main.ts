@@ -1,6 +1,7 @@
 import { MarkdownView, Plugin, TFile } from 'obsidian';
 import { ViewPlugin, type ViewUpdate } from '@codemirror/view';
 import { BreadcrumbBar } from './src/bar';
+import { createRenderGate } from './src/gate';
 import { defaultSettings, EBSettings, normalizePercent } from './src/settings';
 import { EBSettingTab } from './src/settingsTab';
 
@@ -34,24 +35,9 @@ export class BreadcrumbsPlugin extends Plugin {
   }
 
   private createTracker() {
-    // Same wedge hazard as BreadcrumbBar.scheduleRender: rAF callbacks are
-    // deferred while the window is hidden/occluded, and the one-shot
-    // `scheduled` flag would then swallow every later cursor move. The timer
-    // fallback guarantees the gate always opens again (see GATE_FALLBACK_MS
-    // in src/bar.ts); in the normal visible case the timer is a no-op.
-    const GATE_FALLBACK_MS = 64;
-    let scheduled = false;
-    const scheduleRender = () => {
-      if (scheduled) return;
-      scheduled = true;
-      const run = () => {
-        if (!scheduled) return; // the rAF already rendered
-        scheduled = false;
-        this.renderActive();
-      };
-      window.requestAnimationFrame(run);
-      window.setTimeout(run, GATE_FALLBACK_MS);
-    };
+    // One shared gate for cursor/doc changes (see src/gate.ts for the rAF
+    // wedge hazard and the 64ms timer fallback).
+    const scheduleRender = createRenderGate(() => this.renderActive());
     return ViewPlugin.fromClass(
       class {
         update(update: ViewUpdate) {

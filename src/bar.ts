@@ -1,5 +1,6 @@
 import { MarkdownView, Menu, TFile, WorkspaceLeaf } from 'obsidian';
 import type { BreadcrumbsPlugin } from '../main';
+import { createRenderGate } from './gate';
 import { Crumb, computeEditHeadingTrail, computePreviewHeadingTrail, getEditLineAt, getEffectiveHeadings, getPreviewEl, scrollToEditHeading, scrollToPreviewHeading, stripMarkdown } from './trail';
 
 const SEPARATOR = '›';
@@ -7,24 +8,14 @@ const SEPARATOR = '›';
 /** Upper bound on extra separators: the level gap caps at H1 → H6. */
 const MAX_SKIP_SEPARATORS = 5;
 
-/**
- * Fallback delay for the render gate. Chromium defers requestAnimationFrame
- * while the window is hidden or occluded, so a boolean flag released only by
- * rAF can stay set for the whole hidden phase and swallow every later render
- * (the 1s poll then finds its snapshot already current and never re-schedules
- * — cursor-follow freezes permanently). The 64ms timer opens the same gate
- * whenever rAF does not arrive in time; when rAF arrives first (the normal
- * visible case) the timer just observes an already-open gate.
- */
-const GATE_FALLBACK_MS = 64;
-
 export class BreadcrumbBar {
   plugin: BreadcrumbsPlugin;
   leaf: WorkspaceLeaf;
   view: MarkdownView;
   barEl: HTMLElement;
   private scrollHandler: () => void;
-  private rafPending = false;
+  /** Coalesce scroll/poll triggers into one render per frame (see gate.ts). */
+  private readonly scheduleRender = createRenderGate(() => this.render());
   private pollTimer: number | undefined;
   private lastSnapshot = '';
   private lastRenderKey = '';
@@ -40,21 +31,6 @@ export class BreadcrumbBar {
     // Capture-phase scroll listener catches both the CM scroller and the
     // reading-mode preview scroller for this leaf.
     this.scrollHandler = () => this.scheduleRender();
-  }
-
-  /** Coalesce scroll-driven and poll-driven renders into one rAF — with a
-   *  timer fallback so the gate can never wedge while the window is hidden
-   *  (see GATE_FALLBACK_MS). */
-  private scheduleRender() {
-    if (this.rafPending) return;
-    this.rafPending = true;
-    const run = () => {
-      if (!this.rafPending) return; // the rAF already rendered
-      this.rafPending = false;
-      this.render();
-    };
-    window.requestAnimationFrame(run);
-    window.setTimeout(run, GATE_FALLBACK_MS);
   }
 
   mount() {

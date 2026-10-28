@@ -178,7 +178,12 @@ export function headingChainFromCache(headings: HeadingRef[], cursorLine: number
 export function computeEditHeadingTrail(app: { metadataCache: { getFileCache(f: TFile): { headings?: HeadingCache[] } | null } }, file: TFile | null, cursorLine: number, editor?: HeadingsSource | null): Crumb[] {
   if (!file) return [];
   const headings = getEffectiveHeadings(app, file, editor, cursorLine);
-  return headingChainFromCache(headings, cursorLine).map(h => ({
+  return chainToCrumbs(headingChainFromCache(headings, cursorLine));
+}
+
+/** Crumb view of a heading chain: display text plus the jump target. */
+function chainToCrumbs(chain: HeadingRef[]): Crumb[] {
+  return chain.map(h => ({
     text: stripMarkdown(h.heading),
     kind: 'heading' as const,
     line: h.position.start.line,
@@ -412,24 +417,39 @@ export function computePreviewHeadingTrail(app: { metadataCache: { getFileCache(
   const anchorLine = getPreviewLineAt(view, anchorFraction);
   if (anchorLine != null) {
     const headings = getEffectiveHeadings(app, file, view.editor, anchorLine);
-    return headingChainFromCache(headings, anchorLine).map(h => ({
-      text: stripMarkdown(h.heading),
-      kind: 'heading' as const,
-      line: h.position.start.line,
-      level: h.level,
-    }));
+    return chainToCrumbs(headingChainFromCache(headings, anchorLine));
   }
   const scrollLine = getPreviewScrollLine(view);
   if (scrollLine != null) {
     const headings = getEffectiveHeadings(app, file, view.editor, scrollLine + PREVIEW_LINE_EPSILON);
-    return headingChainFromCache(headings, scrollLine + PREVIEW_LINE_EPSILON).map(h => ({
-      text: stripMarkdown(h.heading),
-      kind: 'heading' as const,
-      line: h.position.start.line,
-      level: h.level,
-    }));
+    return chainToCrumbs(headingChainFromCache(headings, scrollLine + PREVIEW_LINE_EPSILON));
   }
   return computePreviewHeadingTrailDom(app, view);
+}
+
+/**
+ * Index in the heading list where the rendered DOM heading window starts, or
+ * -1. The window is matched as a contiguous subsequence: exact text first,
+ * then a whitespace/punctuation-insensitive pass. Levels are not compared —
+ * newer Obsidian renders preview heading tags with shifted levels.
+ */
+function findHeadingWindow(metaText: string[], domText: string[]): number {
+  const loose = (s: string) => s.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]/g, '');
+  for (const strict of [true, false]) {
+    for (let start = 0; start + domText.length <= metaText.length; start++) {
+      let matched = true;
+      for (let i = 0; i < domText.length; i++) {
+        const a = metaText[start + i];
+        const b = domText[i];
+        if (strict ? a !== b : loose(a) !== loose(b)) {
+          matched = false;
+          break;
+        }
+      }
+      if (matched) return start;
+    }
+  }
+  return -1;
 }
 
 /**
@@ -461,31 +481,10 @@ function computePreviewHeadingTrailDom(app: { metadataCache: { getFileCache(f: T
   }));
   if (domHeadings.length === 0) return [];
 
-  const metaText = metaHeadings.map(h => stripMarkdown(h.heading).replace(/\s+/g, ' ').trim());
-
-  // NOTE: newer Obsidian renders preview headings with their tag level shifted
-  // (an H1 heading may be rendered as <h2>), so levels are NOT compared —
-  // matching relies on heading text, strict first, then a loose pass.
-  const loose = (s: string) => s.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]/g, '');
-  const findWindowStart = (strict: boolean): number => {
-    const cmp = strict
-      ? (mi: number, di: number) => metaText[mi] === domHeadings[di].text
-      : (mi: number, di: number) => loose(metaText[mi]) === loose(domHeadings[di].text);
-    for (let start = 0; start + domHeadings.length <= metaHeadings.length; start++) {
-      let ok = true;
-      for (let di = 0; di < domHeadings.length; di++) {
-        if (!cmp(start + di, di)) {
-          ok = false;
-          break;
-        }
-      }
-      if (ok) return start;
-    }
-    return -1;
-  };
-
-  let windowStart = findWindowStart(true);
-  if (windowStart < 0) windowStart = findWindowStart(false);
+  const windowStart = findHeadingWindow(
+    metaHeadings.map(h => stripMarkdown(h.heading).replace(/\s+/g, ' ').trim()),
+    domHeadings.map(h => h.text)
+  );
   if (windowStart < 0) return [];
 
   // The current position is the last rendered heading above the viewport
@@ -497,20 +496,9 @@ function computePreviewHeadingTrailDom(app: { metadataCache: { getFileCache(f: T
     }
   }
 
-  const chainResult: HeadingRef[] = [];
-  for (let i = 0; i <= currentIndex && i < metaHeadings.length; i++) {
-    while (chainResult.length > 0 && chainResult[chainResult.length - 1].level >= metaHeadings[i].level) {
-      chainResult.pop();
-    }
-    chainResult.push(metaHeadings[i]);
-  }
-
-  return chainResult.map(h => ({
-    text: stripMarkdown(h.heading),
-    kind: 'heading' as const,
-    line: h.position.start.line,
-    level: h.level,
-  }));
+  return chainToCrumbs(
+    headingChainFromCache(metaHeadings, currentIndex >= 0 ? metaHeadings[currentIndex].position.start.line : -1)
+  );
 }
 
 /**
@@ -520,7 +508,7 @@ function computePreviewHeadingTrailDom(app: { metadataCache: { getFileCache(f: T
  */
 const PREVIEW_SETTLE_MS = 220;
 
-function listPreviewHeadings(previewEl: HTMLElement, baseTop: number): { el: HTMLElement; text: string }[] {
+function listPreviewHeadings(previewEl: HTMLElement): { el: HTMLElement; text: string }[] {
   return Array.from(previewEl.querySelectorAll<HTMLElement>('h1,h2,h3,h4,h5,h6')).map(el => ({
     el,
     text: (el.textContent ?? '').replace(/\s+/g, ' ').trim(),
@@ -532,32 +520,13 @@ async function settle(ms = PREVIEW_SETTLE_MS): Promise<void> {
 }
 
 /** Current rendered heading window mapped to heading-list indices, or null. */
-function matchPreviewWindow(metaHeadings: HeadingRef[], previewEl: HTMLElement, baseTop: number): { start: number; els: { el: HTMLElement; text: string }[] } | null {
-  const domHeadings = listPreviewHeadings(previewEl, baseTop);
+function matchPreviewWindow(metaHeadings: HeadingRef[], previewEl: HTMLElement): { start: number; els: { el: HTMLElement; text: string }[] } | null {
+  const domHeadings = listPreviewHeadings(previewEl);
   if (domHeadings.length === 0) return null;
-  const metaText = metaHeadings.map(h => stripMarkdown(h.heading).replace(/\s+/g, ' ').trim());
-  const loose = (s: string) => s.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]/g, '');
-
-  // Preview heading tags may be level-shifted, so match by text only.
-  const findStart = (strict: boolean): number => {
-    const cmp = strict
-      ? (mi: number, di: number) => metaText[mi] === domHeadings[di].text
-      : (mi: number, di: number) => loose(metaText[mi]) === loose(domHeadings[di].text);
-    for (let start = 0; start + domHeadings.length <= metaHeadings.length; start++) {
-      let ok = true;
-      for (let di = 0; di < domHeadings.length; di++) {
-        if (!cmp(start + di, di)) {
-          ok = false;
-          break;
-        }
-      }
-      if (ok) return start;
-    }
-    return -1;
-  };
-
-  let start = findStart(true);
-  if (start < 0) start = findStart(false);
+  const start = findHeadingWindow(
+    metaHeadings.map(h => stripMarkdown(h.heading).replace(/\s+/g, ' ').trim()),
+    domHeadings.map(h => h.text)
+  );
   return start >= 0 ? { start, els: domHeadings } : null;
 }
 
@@ -674,7 +643,6 @@ async function scrollToPreviewHeadingLegacy(app: { metadataCache: { getFileCache
   const targetIdx = headings.findIndex(h => h.position.start.line === line);
   if (targetIdx < 0) return;
 
-  const baseTop = previewEl.getBoundingClientRect().top;
   const total = headings.length;
   const maxScroll = () => Math.max(0, previewEl.scrollHeight - previewEl.clientHeight);
 
@@ -688,7 +656,7 @@ async function scrollToPreviewHeadingLegacy(app: { metadataCache: { getFileCache
   };
 
   for (let iter = 0; iter < 7; iter++) {
-    const window = matchPreviewWindow(headings, previewEl, baseTop);
+    const window = matchPreviewWindow(headings, previewEl);
 
     // Target already rendered: land precisely.
     if (window && wanted) {

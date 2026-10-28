@@ -34,6 +34,9 @@ const context = await esbuild.context({
   ],
   format: 'cjs',
   target: 'es2018',
+  // Emit non-ASCII source (localized strings, "›"/"…") as real UTF-8 instead
+  // of esbuild's default \uXXXX escapes: ~5k escapes inflate main.js by ~18 KB.
+  charset: 'utf8',
   logLevel: 'info',
   sourcemap: prod ? false : 'inline',
   treeShaking: true,
