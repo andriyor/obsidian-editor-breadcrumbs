@@ -1,6 +1,7 @@
 import { App, PluginSettingTab, SettingDefinitionItem } from 'obsidian';
 import type BreadcrumbsPlugin from '../main';
 import { defaultSettings } from './settings';
+import { t } from './i18n';
 
 export class EBSettingTab extends PluginSettingTab {
   plugin: BreadcrumbsPlugin;
@@ -11,37 +12,39 @@ export class EBSettingTab extends PluginSettingTab {
   }
 
   getSettingDefinitions(): SettingDefinitionItem[] {
+    const i18n = t();
+
     return [
       {
-        name: 'Show folder path',
-        desc: 'Show the folder chain (Folder › Subfolder) before the file name.',
+        name: i18n.showFolderPath.name,
+        desc: i18n.showFolderPath.desc,
         control: { type: 'toggle', key: 'showFolderPath' },
       },
       {
-        name: 'Show file name',
-        desc: 'Show the current file name as a crumb.',
+        name: i18n.showFileName.name,
+        desc: i18n.showFileName.desc,
         control: { type: 'toggle', key: 'showFileName' },
       },
       {
-        name: 'Max characters per crumb',
-        desc: 'Longer names are truncated with an ellipsis (…).',
+        name: i18n.maxSegmentLength.name,
+        desc: i18n.maxSegmentLength.desc,
         control: {
           type: 'number',
           key: 'maxSegmentLength',
           min: 1,
           step: 1,
           defaultValue: defaultSettings.maxSegmentLength,
-          validate: value => (value >= 1 ? undefined : 'Enter a number of at least 1.'),
+          validate: value => (value >= 1 ? undefined : i18n.maxSegmentLength.errorMin),
         },
       },
       {
-        name: 'Follow view anchor in edit mode',
-        desc: 'Off: the trail follows the cursor, as before. On: it follows the line at the edit-mode anchor below, so scrolling without clicking also updates the trail.',
+        name: i18n.editFollowView.name,
+        desc: i18n.editFollowView.desc,
         control: { type: 'toggle', key: 'editFollowView' },
       },
       {
-        name: 'Edit-mode anchor (%)',
-        desc: 'Where in the editor the trail switches headings: 0 = top edge, 50 = middle, 100 = bottom edge. Only used when "Follow view anchor in edit mode" is on.',
+        name: i18n.editAnchorPercent.name,
+        desc: i18n.editAnchorPercent.desc,
         control: {
           type: 'number',
           key: 'editAnchorPercent',
@@ -49,12 +52,13 @@ export class EBSettingTab extends PluginSettingTab {
           max: 100,
           step: 1,
           defaultValue: defaultSettings.editAnchorPercent,
-          validate: value => (Number.isInteger(value) && value >= 0 && value <= 100 ? undefined : 'Enter a whole number from 0 to 100.'),
+          validate: value =>
+            Number.isInteger(value) && value >= 0 && value <= 100 ? undefined : i18n.editAnchorPercent.errorRange,
         },
       },
       {
-        name: 'Reading-mode anchor (%)',
-        desc: 'Where in the reading view a heading becomes current: 0 = top edge, 50 = middle, 100 = bottom edge.',
+        name: i18n.readingAnchorPercent.name,
+        desc: i18n.readingAnchorPercent.desc,
         control: {
           type: 'number',
           key: 'readingAnchorPercent',
@@ -62,22 +66,23 @@ export class EBSettingTab extends PluginSettingTab {
           max: 100,
           step: 1,
           defaultValue: defaultSettings.readingAnchorPercent,
-          validate: value => (Number.isInteger(value) && value >= 0 && value <= 100 ? undefined : 'Enter a whole number from 0 to 100.'),
+          validate: value =>
+            Number.isInteger(value) && value >= 0 && value <= 100 ? undefined : i18n.readingAnchorPercent.errorRange,
         },
       },
       {
-        name: 'Show in reading mode',
-        desc: 'Also show the breadcrumb bar in reading (preview) mode, following the scroll position.',
+        name: i18n.showInReadingMode.name,
+        desc: i18n.showInReadingMode.desc,
         control: { type: 'toggle', key: 'showInReadingMode' },
       },
       {
-        name: 'Show heading trail in the tab header',
-        desc: 'Render the heading breadcrumbs inside the native tab title bar, right after the folder/file path (Obsidian 1.14+ header). Folder and file crumbs are omitted there because the native path already shows them.',
+        name: i18n.showInTabHeader.name,
+        desc: i18n.showInTabHeader.desc,
         control: { type: 'toggle', key: 'showInTabHeader' },
       },
       {
-        name: 'Hide when there are no headings',
-        desc: 'Hide the bar completely for notes without any headings.',
+        name: i18n.hideWhenNoHeadings.name,
+        desc: i18n.hideWhenNoHeadings.desc,
         control: { type: 'toggle', key: 'hideWhenNoHeadings' },
       },
     ];
