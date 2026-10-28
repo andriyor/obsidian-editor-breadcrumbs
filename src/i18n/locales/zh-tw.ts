@@ -7,16 +7,16 @@ export const zhTW: TranslationStrings = {
   },
   showFileName: {
     name: '顯示檔案名稱',
-    desc: '在導航軌跡中顯示目前檔案名稱。',
+    desc: '在麵包屑導航中顯示目前檔案名稱。',
   },
   maxSegmentLength: {
-    name: '每個分段的最大字元數',
+    name: '每個麵包屑節點的最大字元數',
     desc: '超過長度的名稱將被截斷並以省略號（…）顯示。',
     errorMin: '請輸入不小於 1 的數字。',
   },
   editFollowView: {
     name: '編輯模式下跟隨檢視錨點',
-    desc: '關閉：軌跡跟隨游標。開啟：軌跡跟隨下方設定的編輯錨點所在行，無需點擊游標，僅滾動即可更新軌跡。',
+    desc: '關閉：麵包屑跟隨游標。開啟：麵包屑跟隨下方設定的編輯錨點所在行，無需點擊游標，僅滾動頁面即可更新麵包屑。',
   },
   editAnchorPercent: {
     name: '編輯模式錨點位置 (%)',
@@ -30,7 +30,7 @@ export const zhTW: TranslationStrings = {
   },
   showInReadingMode: {
     name: '在閱讀模式中顯示',
-    desc: '在閱讀（預覽）模式下也顯示麵包屑導航欄，並隨滾動位置更新。',
+    desc: '在閱讀（預覽）模式下也顯示麵包屑列，並隨滾動位置更新。',
   },
   showInTabHeader: {
     name: '在分頁標題列中顯示標題軌跡',
@@ -38,6 +38,6 @@ export const zhTW: TranslationStrings = {
   },
   hideWhenNoHeadings: {
     name: '無標題時隱藏',
-    desc: '對於沒有任何標題的筆記，完全隱藏麵包屑導航欄。',
+    desc: '對於沒有任何標題的筆記，完全隱藏麵包屑列。',
   },
 };

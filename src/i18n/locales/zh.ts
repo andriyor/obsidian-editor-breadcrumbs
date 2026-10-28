@@ -7,10 +7,10 @@ export const zh: TranslationStrings = {
   },
   showFileName: {
     name: '显示文件名',
-    desc: '在面包屑中显示当前文件名。',
+    desc: '在面包屑导航中显示当前文件名。',
   },
   maxSegmentLength: {
-    name: '每个面包屑的最大字符数',
+    name: '每个面包屑节点的最大字符数',
     desc: '超出长度的名称将截断并显示省略号（…）。',
     errorMin: '请输入不小于 1 的数字。',
   },
