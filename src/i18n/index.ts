@@ -16,18 +16,13 @@ import { ar } from './locales/ar';
 
 export function getAppLanguage(): string {
   try {
-    if (typeof getLanguage === 'function') {
-      const lang = getLanguage();
-      if (lang) return lang;
-    }
-    if (typeof window !== 'undefined' && window.localStorage) {
-      const lang = window.localStorage.getItem('language');
-      if (lang) return lang;
-    }
+    // Obsidian's official API. Never use Web Storage here: the community
+    // review flags it as plugin-data persistence, and the UI language is not
+    // plugin data in the first place.
+    return getLanguage() || 'en';
   } catch {
-    // defensive fallback
+    return 'en';
   }
-  return 'en';
 }
 
 export function t(langCode?: string): TranslationStrings {
